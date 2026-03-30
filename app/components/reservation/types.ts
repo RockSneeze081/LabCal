@@ -11,9 +11,10 @@ export interface ReservationWithUser {
   notes: string | null;
   allowsCompany: boolean;
   userId: string;
+  userName?: string;
   createdAt: Date | string;
   updatedAt: Date | string;
-  user: User;
+  user?: User;
 }
 
 export interface ReservationFormData {

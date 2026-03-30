@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
-import { updateReservationSchema } from '@/lib/validations';
+import { 
+  getAllReservations,
+  updateReservation, 
+  deleteReservation 
+} from '@/lib/reservations';
 
 export async function GET(
   request: NextRequest,
@@ -9,15 +11,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
-    const reservation = await prisma.reservation.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: { id: true, name: true },
-        },
-      },
-    });
+    const reservations = getAllReservations();
+    const reservation = reservations.find(r => r.id === id);
 
     if (!reservation) {
       return NextResponse.json(
@@ -41,50 +36,31 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
     const { id } = await params;
     const body = await request.json();
-    const result = updateReservationSchema.safeParse(body);
+    const { date, timeSlots, activityType, notes, allowsCompany, userId } = body;
 
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error.errors[0].message },
-        { status: 400 }
-      );
-    }
+    const reservations = getAllReservations();
+    const existing = reservations.find(r => r.id === id);
 
-    const existingReservation = await prisma.reservation.findUnique({
-      where: { id },
-    });
-
-    if (!existingReservation) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Reserva no encontrada' },
         { status: 404 }
       );
     }
 
-    if (existingReservation.userId !== session.id) {
+    if (existing.userId !== userId) {
       return NextResponse.json(
         { error: 'No tienes permiso para editar esta reserva' },
         { status: 403 }
       );
     }
 
-    const { date, timeSlots, activityType, notes, allowsCompany } = result.data;
-
     for (const slot of timeSlots) {
-      const otherReservations = await prisma.reservation.findMany({
-        where: {
-          date: new Date(date),
-          timeSlots: { has: slot },
-          id: { not: id },
-        },
-      });
+      const otherReservations = reservations.filter(
+        r => r.date === date && r.timeSlots.includes(slot) && r.id !== id
+      );
 
       if (otherReservations.length > 0) {
         const hasPrivateReservation = otherReservations.some(r => !r.allowsCompany);
@@ -105,23 +81,15 @@ export async function PUT(
       }
     }
 
-    const reservation = await prisma.reservation.update({
-      where: { id },
-      data: {
-        date: new Date(date),
-        timeSlots,
-        activityType,
-        notes: notes || null,
-        allowsCompany,
-      },
-      include: {
-        user: {
-          select: { id: true, name: true },
-        },
-      },
+    const updated = updateReservation(id, {
+      date,
+      timeSlots,
+      activityType,
+      notes: notes || null,
+      allowsCompany,
     });
 
-    return NextResponse.json({ reservation });
+    return NextResponse.json({ reservation: updated });
   } catch (error) {
     console.error('Error updating reservation:', error);
     return NextResponse.json(
@@ -136,34 +104,28 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
     const { id } = await params;
+    const body = await request.json();
+    const { userId } = body;
     
-    const existingReservation = await prisma.reservation.findUnique({
-      where: { id },
-    });
+    const reservations = getAllReservations();
+    const existing = reservations.find(r => r.id === id);
 
-    if (!existingReservation) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Reserva no encontrada' },
         { status: 404 }
       );
     }
 
-    if (existingReservation.userId !== session.id) {
+    if (existing.userId !== userId) {
       return NextResponse.json(
         { error: 'No tienes permiso para eliminar esta reserva' },
         { status: 403 }
       );
     }
 
-    await prisma.reservation.delete({
-      where: { id },
-    });
+    deleteReservation(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

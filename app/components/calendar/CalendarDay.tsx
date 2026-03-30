@@ -92,7 +92,7 @@ export function CalendarDay({
                     ) : (
                       <Users className="w-2.5 h-2.5 flex-shrink-0" />
                     )}
-                    <span className="truncate">{r.user.name}</span>
+                    <span className="truncate">{r.user?.name || r.userName}</span>
                   </div>
                 </div>
               ))}

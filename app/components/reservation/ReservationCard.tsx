@@ -55,7 +55,7 @@ export function ReservationCard({
           
           {!compact && (
             <>
-              <p className="mt-2 font-medium text-text-primary">{reservation.user.name}</p>
+              <p className="mt-2 font-medium text-text-primary">{reservation.user?.name || reservation.userName}</p>
               <p className="text-sm text-text-secondary mt-1">
                 {reservation.timeSlots.map(getSlotLabel).join(', ')}
               </p>
@@ -69,7 +69,7 @@ export function ReservationCard({
 
           {compact && (
             <p className="text-xs text-text-secondary mt-1 truncate">
-              {reservation.user.name} · {reservation.timeSlots.map(getSlotLabel).join(', ')}
+              {reservation.user?.name || reservation.userName} · {reservation.timeSlots.map(getSlotLabel).join(', ')}
             </p>
           )}
         </div>

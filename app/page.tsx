@@ -44,7 +44,6 @@ function LabCalApp() {
   
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [loginName, setLoginName] = React.useState('');
-  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
   const [loginError, setLoginError] = React.useState<string | null>(null);
   
   const [reservations, setReservations] = React.useState<ReservationWithUser[]>([]);
@@ -83,70 +82,64 @@ function LabCalApp() {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch('/api/users');
-      const data = await res.json();
-      if (data.users) {
-        setUsers(data.users);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
+  const fetchUsers = () => {
+    const savedUsersJson = localStorage.getItem('labcal_users');
+    const savedUsers: User[] = savedUsersJson ? JSON.parse(savedUsersJson) : [];
+    setUsers(savedUsers);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggingIn(true);
-    setLoginError(null);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: loginName }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLoginError(data.error || 'Error al iniciar sesión');
-        return;
-      }
-
-      setCurrentUser(data.user);
-      localStorage.setItem('labcal_user', JSON.stringify(data.user));
-      setLoginName('');
-      showToast(`Bienvenido/a, ${data.user.name}!`, 'success');
-    } catch (error) {
-      setLoginError('Error de conexión');
-    } finally {
-      setIsLoggingIn(false);
+    
+    const name = loginName.trim();
+    if (!name) {
+      setLoginError('Introduce tu nombre');
+      return;
     }
+
+    const savedUsersJson = localStorage.getItem('labcal_users');
+    const savedUsers: User[] = savedUsersJson ? JSON.parse(savedUsersJson) : [];
+    
+    let user = savedUsers.find(u => u.name.toLowerCase() === name.toLowerCase());
+    
+    if (!user) {
+      user = {
+        id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+        name: name,
+      };
+      savedUsers.push(user);
+      localStorage.setItem('labcal_users', JSON.stringify(savedUsers));
+    }
+
+    setCurrentUser(user);
+    localStorage.setItem('labcal_user', JSON.stringify(user));
+    setLoginName('');
+    showToast(`Bienvenido/a, ${user.name}!`, 'success');
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setCurrentUser(null);
-      localStorage.removeItem('labcal_user');
-      showToast('Sesión cerrada', 'info');
-    } catch (error) {
-      showToast('Error al cerrar sesión', 'error');
-    }
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('labcal_user');
+    showToast('Sesión cerrada', 'info');
   };
 
   const handleCreateReservation = async (data: ReservationFormData) => {
+    if (!currentUser) return;
+
     const url = editingReservation 
       ? `/api/reservations/${editingReservation.id}`
       : '/api/reservations';
     
     const method = editingReservation ? 'PUT' : 'POST';
 
+    const body = editingReservation 
+      ? data 
+      : { ...data, userId: currentUser.id, userName: currentUser.name };
+
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(body),
     });
 
     const result = await res.json();
@@ -165,7 +158,7 @@ function LabCalApp() {
   };
 
   const handleDeleteReservation = async () => {
-    if (!editingReservation) return;
+    if (!editingReservation || !currentUser) return;
 
     const confirmed = window.confirm('¿Eliminar esta reserva?');
     if (!confirmed) return;
@@ -173,6 +166,8 @@ function LabCalApp() {
     try {
       const res = await fetch(`/api/reservations/${editingReservation.id}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id }),
       });
 
       if (!res.ok) {
@@ -245,7 +240,7 @@ function LabCalApp() {
               onChange={(e) => setLoginName(e.target.value)}
               error={loginError || undefined}
             />
-            <Button type="submit" className="w-full" loading={isLoggingIn}>
+            <Button type="submit" className="w-full">
               Entrar
             </Button>
           </form>
