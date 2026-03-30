@@ -19,7 +19,7 @@ model User {
 model Reservation {
   id            String   @id @default(cuid())
   date          DateTime @db.Date
-  timeSlot      String
+  timeSlots     String[]
   activityType  String
   notes         String?
   allowsCompany Boolean  @default(false)
@@ -28,14 +28,8 @@ model Reservation {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  @@unique([date, timeSlot, userId])
   @@index([date])
   @@map("reservations")
-}
-
-enum TimeSlot {
-  morning
-  afternoon
 }
 
 enum ActivityType {

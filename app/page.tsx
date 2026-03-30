@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { format, isToday } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Camera, LogOut, Plus, Filter, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -11,7 +12,7 @@ import { CalendarGrid } from '@/app/components/calendar/CalendarGrid';
 import { ReservationForm } from '@/app/components/reservation/ReservationForm';
 import { ReservationCard } from '@/app/components/reservation/ReservationCard';
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_COLORS } from '@/lib/utils';
-import { ReservationWithUser, User } from '@/app/components/reservation/types';
+import { ReservationWithUser, User, ReservationFormData } from '@/app/components/reservation/types';
 
 function LabCalApp() {
   const { showToast } = useToast();
@@ -110,7 +111,7 @@ function LabCalApp() {
     }
   };
 
-  const handleCreateReservation = async (data: Parameters<typeof createReservation>[0]) => {
+  const handleCreateReservation = async (data: ReservationFormData) => {
     const url = editingReservation 
       ? `/api/reservations/${editingReservation.id}`
       : '/api/reservations';
@@ -225,7 +226,7 @@ function LabCalApp() {
           </form>
 
           <p className="text-center text-xs text-text-muted mt-6">
-            Club fotográfico · Laboratorio compartido
+            AFC, Laboratorio Analógico
           </p>
         </div>
       </div>
@@ -361,7 +362,7 @@ function LabCalApp() {
           {selectedDate && selectedDateReservations.length > 0 && (
             <div className="bg-bg-tertiary rounded-lg p-4 border border-border">
               <h3 className="font-mono font-semibold text-text-primary mb-3">
-                {format(selectedDate, 'EEEE, d MMM', { locale: require('date-fns/locale/es') })}
+                {format(selectedDate, 'EEEE, d MMM', { locale: es })}
               </h3>
               <div className="space-y-2">
                 {selectedDateReservations.map((r) => (

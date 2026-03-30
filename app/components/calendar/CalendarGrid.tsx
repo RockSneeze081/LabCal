@@ -148,7 +148,7 @@ export function CalendarGrid({
                 date={day}
                 reservations={dayReservations}
                 isCurrentMonth={isCurrentMonth}
-                isSelected={isSelected}
+                isSelected={!!isSelected}
                 isToday={isDayToday}
                 onClick={() => onDayClick(day)}
                 onReservationClick={onReservationClick}

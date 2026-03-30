@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
           select: { id: true, name: true },
         },
       },
-      orderBy: [{ date: 'asc' }, { timeSlot: 'asc' }],
+      orderBy: { date: 'asc' },
     });
 
     return NextResponse.json({ reservations });
@@ -72,37 +72,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { date, timeSlot, activityType, notes, allowsCompany } = result.data;
+    const { date, timeSlots, activityType, notes, allowsCompany } = result.data;
 
-    const existingReservations = await prisma.reservation.findMany({
-      where: {
-        date: new Date(date),
-        timeSlot,
-      },
-    });
+    for (const slot of timeSlots) {
+      const existingReservations = await prisma.reservation.findMany({
+        where: {
+          date: new Date(date),
+          timeSlots: { has: slot },
+        },
+      });
 
-    if (existingReservations.length > 0) {
-      const hasPrivateReservation = existingReservations.some(r => !r.allowsCompany);
-      
-      if (hasPrivateReservation) {
-        return NextResponse.json(
-          { error: 'Ya existe una reserva privada en este horario' },
-          { status: 409 }
-        );
-      }
+      if (existingReservations.length > 0) {
+        const hasPrivateReservation = existingReservations.some(r => !r.allowsCompany);
+        
+        if (hasPrivateReservation) {
+          return NextResponse.json(
+            { error: `Ya existe una reserva privada en el horario ${slot}` },
+            { status: 409 }
+          );
+        }
 
-      if (!allowsCompany) {
-        return NextResponse.json(
-          { error: 'Ya existen reservas compartidas. Solo puedes reservar si aceptas compañía' },
-          { status: 409 }
-        );
+        if (!allowsCompany) {
+          return NextResponse.json(
+            { error: `Ya existen reservas compartidas en ${slot}. Solo puedes reservar si aceptas compañía` },
+            { status: 409 }
+          );
+        }
       }
     }
 
     const reservation = await prisma.reservation.create({
       data: {
         date: new Date(date),
-        timeSlot,
+        timeSlots,
         activityType,
         notes: notes || null,
         allowsCompany,

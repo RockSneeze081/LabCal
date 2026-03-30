@@ -75,31 +75,33 @@ export async function PUT(
       );
     }
 
-    const { date, timeSlot, activityType, notes, allowsCompany } = result.data;
+    const { date, timeSlots, activityType, notes, allowsCompany } = result.data;
 
-    const otherReservations = await prisma.reservation.findMany({
-      where: {
-        date: new Date(date),
-        timeSlot,
-        id: { not: id },
-      },
-    });
+    for (const slot of timeSlots) {
+      const otherReservations = await prisma.reservation.findMany({
+        where: {
+          date: new Date(date),
+          timeSlots: { has: slot },
+          id: { not: id },
+        },
+      });
 
-    if (otherReservations.length > 0) {
-      const hasPrivateReservation = otherReservations.some(r => !r.allowsCompany);
-      
-      if (hasPrivateReservation) {
-        return NextResponse.json(
-          { error: 'Ya existe una reserva privada en este horario' },
-          { status: 409 }
-        );
-      }
+      if (otherReservations.length > 0) {
+        const hasPrivateReservation = otherReservations.some(r => !r.allowsCompany);
+        
+        if (hasPrivateReservation) {
+          return NextResponse.json(
+            { error: `Ya existe una reserva privada en el horario ${slot}` },
+            { status: 409 }
+          );
+        }
 
-      if (!allowsCompany) {
-        return NextResponse.json(
-          { error: 'Ya existen reservas compartidas. Solo puedes reservar si aceptas compañía' },
-          { status: 409 }
-        );
+        if (!allowsCompany) {
+          return NextResponse.json(
+            { error: `Ya existen reservas compartidas en ${slot}. Solo puedes reservar si aceptas compañía` },
+            { status: 409 }
+          );
+        }
       }
     }
 
@@ -107,7 +109,7 @@ export async function PUT(
       where: { id },
       data: {
         date: new Date(date),
-        timeSlot,
+        timeSlots,
         activityType,
         notes: notes || null,
         allowsCompany,

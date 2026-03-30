@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ACTIVITY_TYPE_COLORS } from '@/lib/utils';
+import { ACTIVITY_TYPE_COLORS, getTimeSlotsForDay } from '@/lib/utils';
 import { ReservationWithUser } from '@/app/components/reservation/types';
 import { Users, Lock } from 'lucide-react';
 
@@ -28,8 +28,12 @@ export function CalendarDay({
   onReservationClick,
   currentUserId,
 }: CalendarDayProps) {
-  const morningReservations = reservations.filter((r) => r.timeSlot === 'morning');
-  const afternoonReservations = reservations.filter((r) => r.timeSlot === 'afternoon');
+  const daySlots = getTimeSlotsForDay(date);
+  const slotKeys = Object.keys(daySlots);
+  
+  const getReservationsForSlot = (slot: string) => {
+    return reservations.filter((r) => r.timeSlots.includes(slot));
+  };
   
   const maxVisiblePerSlot = 2;
 
@@ -60,71 +64,46 @@ export function CalendarDay({
       </div>
 
       <div className="mt-1 space-y-0.5">
-        {morningReservations.length > 0 && (
-          <div className="space-y-0.5">
-            {morningReservations.slice(0, maxVisiblePerSlot).map((r) => (
-              <div
-                key={r.id}
-                className={cn(
-                  'px-1 py-0.5 text-xs rounded truncate cursor-pointer transition-transform hover:scale-[1.02]',
-                  ACTIVITY_TYPE_COLORS[r.activityType]?.bg,
-                  ACTIVITY_TYPE_COLORS[r.activityType]?.text
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onReservationClick(r);
-                }}
-              >
-                <div className="flex items-center gap-1">
-                  {!r.allowsCompany ? (
-                    <Lock className="w-2.5 h-2.5 flex-shrink-0" />
-                  ) : (
-                    <Users className="w-2.5 h-2.5 flex-shrink-0" />
+        {slotKeys.map((slot) => {
+          const slotReservations = getReservationsForSlot(slot);
+          if (slotReservations.length === 0) return null;
+          
+          return (
+            <div key={slot} className="space-y-0.5">
+              <div className="text-[10px] text-text-muted px-1 font-medium">
+                {daySlots[slot]?.time}
+              </div>
+              {slotReservations.slice(0, maxVisiblePerSlot).map((r) => (
+                <div
+                  key={r.id}
+                  className={cn(
+                    'px-1 py-0.5 text-xs rounded truncate cursor-pointer transition-transform hover:scale-[1.02]',
+                    ACTIVITY_TYPE_COLORS[r.activityType]?.bg,
+                    ACTIVITY_TYPE_COLORS[r.activityType]?.text
                   )}
-                  <span className="truncate">{r.user.name}</span>
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReservationClick(r);
+                  }}
+                >
+                  <div className="flex items-center gap-1">
+                    {!r.allowsCompany ? (
+                      <Lock className="w-2.5 h-2.5 flex-shrink-0" />
+                    ) : (
+                      <Users className="w-2.5 h-2.5 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{r.user.name}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {morningReservations.length > maxVisiblePerSlot && (
-              <div className="text-xs text-text-muted px-1">
-                +{morningReservations.length - maxVisiblePerSlot} más
-              </div>
-            )}
-          </div>
-        )}
-
-        {afternoonReservations.length > 0 && (
-          <div className="space-y-0.5">
-            {afternoonReservations.slice(0, maxVisiblePerSlot).map((r) => (
-              <div
-                key={r.id}
-                className={cn(
-                  'px-1 py-0.5 text-xs rounded truncate cursor-pointer transition-transform hover:scale-[1.02]',
-                  ACTIVITY_TYPE_COLORS[r.activityType]?.bg,
-                  ACTIVITY_TYPE_COLORS[r.activityType]?.text
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onReservationClick(r);
-                }}
-              >
-                <div className="flex items-center gap-1">
-                  {!r.allowsCompany ? (
-                    <Lock className="w-2.5 h-2.5 flex-shrink-0" />
-                  ) : (
-                    <Users className="w-2.5 h-2.5 flex-shrink-0" />
-                  )}
-                  <span className="truncate">{r.user.name}</span>
+              ))}
+              {slotReservations.length > maxVisiblePerSlot && (
+                <div className="text-xs text-text-muted px-1">
+                  +{slotReservations.length - maxVisiblePerSlot} más
                 </div>
-              </div>
-            ))}
-            {afternoonReservations.length > maxVisiblePerSlot && (
-              <div className="text-xs text-text-muted px-1">
-                +{afternoonReservations.length - maxVisiblePerSlot} más
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

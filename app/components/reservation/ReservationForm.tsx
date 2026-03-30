@@ -3,13 +3,12 @@
 import * as React from 'react';
 import { format } from 'date-fns';
 import { Input } from '@/app/components/ui/input';
-import { Select } from '@/app/components/ui/select';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Toggle } from '@/app/components/ui/toggle';
 import { Button } from '@/app/components/ui/button';
-import { ACTIVITY_TYPES, TIME_SLOTS } from '@/lib/utils';
+import { ACTIVITY_TYPES, getTimeSlotsForDay } from '@/lib/utils';
 import { ReservationFormData, ReservationWithUser } from './types';
-import { Users, Lock } from 'lucide-react';
+import { Users, Lock, Check } from 'lucide-react';
 
 interface ReservationFormProps {
   date: Date;
@@ -32,10 +31,10 @@ export function ReservationForm({
 }: ReservationFormProps) {
   const [formData, setFormData] = React.useState<ReservationFormData>({
     date: format(date, 'yyyy-MM-dd'),
-    timeSlot: reservation?.timeSlot || 'morning',
-    activityType: reservation?.activityType || 'revelado',
+    timeSlots: reservation?.timeSlots || [],
+    activityType: reservation?.activityType || 'ampliacion',
     notes: reservation?.notes || '',
-    allowsCompany: reservation?.allowsCompany || false,
+    allowsCompany: reservation?.allowsCompany ?? true,
   });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -43,10 +42,10 @@ export function ReservationForm({
   React.useEffect(() => {
     setFormData({
       date: format(date, 'yyyy-MM-dd'),
-      timeSlot: reservation?.timeSlot || 'morning',
-      activityType: reservation?.activityType || 'revelado',
+      timeSlots: reservation?.timeSlots || [],
+      activityType: reservation?.activityType || 'ampliacion',
       notes: reservation?.notes || '',
-      allowsCompany: reservation?.allowsCompany || false,
+      allowsCompany: reservation?.allowsCompany ?? true,
     });
   }, [date, reservation]);
 
@@ -69,10 +68,14 @@ export function ReservationForm({
     label,
   }));
 
-  const timeSlotOptions = Object.entries(TIME_SLOTS).map(([value, { label, time }]) => ({
-    value,
-    label: `${label} (${time})`,
-  }));
+  const availableTimeSlots = getTimeSlotsForDay(date);
+
+  const toggleTimeSlot = (slot: string) => {
+    const newSlots = formData.timeSlots.includes(slot)
+      ? formData.timeSlots.filter((s) => s !== slot)
+      : [...formData.timeSlots, slot];
+    setFormData({ ...formData, timeSlots: newSlots });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,13 +93,46 @@ export function ReservationForm({
         required
       />
 
-      <Select
-        label="Franja horaria"
-        value={formData.timeSlot}
-        onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value as 'morning' | 'afternoon' })}
-        options={timeSlotOptions}
-        required
-      />
+      <div>
+        <label className="block text-sm font-medium text-text-secondary mb-2">
+          Franjas horarias
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(availableTimeSlots).map(([slot, slotInfo]) => {
+            if (!slotInfo) return null;
+            const { label } = slotInfo;
+            const isSelected = formData.timeSlots.includes(slot);
+            return (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => toggleTimeSlot(slot)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md border transition-colors
+                  ${isSelected
+                    ? 'bg-accent-red/20 border-accent-red text-accent-red'
+                    : 'bg-bg-secondary border-border text-text-secondary hover:border-accent-red/50'
+                  }
+                `}
+              >
+                <span className={`
+                  w-5 h-5 rounded border flex items-center justify-center transition-colors
+                  ${isSelected
+                    ? 'bg-accent-red border-accent-red'
+                    : 'border-border'
+                  }
+                `}>
+                  {isSelected && <Check className="w-3 h-3 text-white" />}
+                </span>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {formData.timeSlots.length === 0 && (
+          <p className="text-xs text-red-400 mt-1">Selecciona al menos una franja horaria</p>
+        )}
+      </div>
 
       <Select
         label="Tipo de actividad"
@@ -157,11 +193,45 @@ export function ReservationForm({
           <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
             Cancelar
           </Button>
-          <Button type="submit" loading={loading}>
+          <Button type="submit" loading={loading} disabled={formData.timeSlots.length === 0}>
             {isEditing ? 'Guardar cambios' : 'Crear reserva'}
           </Button>
         </div>
       </div>
     </form>
+  );
+}
+
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: { value: string; label: string }[];
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-text-secondary mb-1">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={onChange}
+        required={required}
+        className="w-full px-3 py-2 bg-bg-secondary border border-border rounded-md text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-red focus:border-accent-red"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

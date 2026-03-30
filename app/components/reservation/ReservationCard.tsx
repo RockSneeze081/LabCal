@@ -2,8 +2,9 @@
 
 import * as React from 'react';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { ACTIVITY_TYPES, TIME_SLOTS } from '@/lib/utils';
+import { ACTIVITY_TYPES, getTimeSlotsForDay } from '@/lib/utils';
 import { Badge, StatusBadge } from '@/app/components/ui/badge';
 import { ReservationWithUser } from './types';
 import { Edit2, Trash2, Users, Lock } from 'lucide-react';
@@ -24,7 +25,10 @@ export function ReservationCard({
   compact = false,
 }: ReservationCardProps) {
   const activityInfo = ACTIVITY_TYPES[reservation.activityType as keyof typeof ACTIVITY_TYPES];
-  const timeSlotInfo = TIME_SLOTS[reservation.timeSlot as keyof typeof TIME_SLOTS];
+  const reservationDate = new Date(reservation.date);
+  const daySlots = getTimeSlotsForDay(reservationDate);
+  
+  const getSlotLabel = (slot: string) => daySlots[slot]?.label || slot;
 
   const activityVariant = reservation.activityType as 'revelado' | 'ampliacion' | 'contactos' | 'otro';
 
@@ -53,7 +57,7 @@ export function ReservationCard({
             <>
               <p className="mt-2 font-medium text-text-primary">{reservation.user.name}</p>
               <p className="text-sm text-text-secondary mt-1">
-                {timeSlotInfo?.label} ({timeSlotInfo?.time})
+                {reservation.timeSlots.map(getSlotLabel).join(', ')}
               </p>
               {reservation.notes && (
                 <p className="text-sm text-text-muted mt-2 line-clamp-2">
@@ -65,7 +69,7 @@ export function ReservationCard({
 
           {compact && (
             <p className="text-xs text-text-secondary mt-1 truncate">
-              {reservation.user.name} · {timeSlotInfo?.label}
+              {reservation.user.name} · {reservation.timeSlots.map(getSlotLabel).join(', ')}
             </p>
           )}
         </div>
@@ -99,7 +103,7 @@ export function ReservationCard({
           <Lock className="w-3 h-3" />
         )}
         <span>
-          {format(new Date(reservation.date), 'EEEE, d MMM', { locale: require('date-fns/locale/es') })}
+          {format(new Date(reservation.date), 'EEEE, d MMM', { locale: es })}
         </span>
       </div>
     </div>

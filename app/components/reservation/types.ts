@@ -6,7 +6,7 @@ export interface User {
 export interface ReservationWithUser {
   id: string;
   date: Date | string;
-  timeSlot: 'morning' | 'afternoon';
+  timeSlots: string[];
   activityType: 'revelado' | 'ampliacion' | 'contactos' | 'otro';
   notes: string | null;
   allowsCompany: boolean;
@@ -18,7 +18,7 @@ export interface ReservationWithUser {
 
 export interface ReservationFormData {
   date: string;
-  timeSlot: 'morning' | 'afternoon';
+  timeSlots: string[];
   activityType: 'revelado' | 'ampliacion' | 'contactos' | 'otro';
   notes: string;
   allowsCompany: boolean;

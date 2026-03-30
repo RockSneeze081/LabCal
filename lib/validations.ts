@@ -12,9 +12,7 @@ export const reservationSchema = z.object({
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido'),
-  timeSlot: z.enum(['morning', 'afternoon'], {
-    required_error: 'Selecciona una franja horaria',
-  }),
+  timeSlots: z.array(z.string()).min(1, 'Selecciona al menos una franja horaria'),
   activityType: z.enum(['revelado', 'ampliacion', 'contactos', 'otro'], {
     required_error: 'Selecciona el tipo de actividad',
   }),

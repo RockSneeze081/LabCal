@@ -6,15 +6,49 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const TIME_SLOTS = {
-  morning: { label: 'Mañana', time: '08:00 - 14:00' },
-  afternoon: { label: 'Tarde', time: '14:00 - 20:00' },
+  '16-18': { label: '16:00 - 18:00', time: '16:00 - 18:00' },
+  '18-20:30': { label: '18:00 - 20:30', time: '18:00 - 20:30' },
 } as const;
 
+export const MORNING_SLOTS = {
+  '10-13': { label: '10:00 - 13:00', time: '10:00 - 13:00' },
+  '10-13:30': { label: '10:00 - 13:30', time: '10:00 - 13:30' },
+} as const;
+
+export type TimeSlotKey = keyof typeof TIME_SLOTS;
+export type MorningSlotKey = keyof typeof MORNING_SLOTS;
+
+type SlotInfo = { label: string; time: string };
+type DaySlots = Partial<Record<string, SlotInfo>>;
+
+export const getTimeSlotsForDay = (date: Date): DaySlots => {
+  const day = date.getDay();
+  
+  if (day === 6) {
+    return {
+      '10-13:30': { label: '10:00 - 13:30', time: '10:00 - 13:30' },
+    };
+  }
+  
+  if (day === 3) {
+    return {
+      '10-13': { label: '10:00 - 13:00', time: '10:00 - 13:00' },
+      '16-18': { label: '16:00 - 18:00', time: '16:00 - 18:00' },
+      '18-20:30': { label: '18:00 - 20:30', time: '18:00 - 20:30' },
+    };
+  }
+  
+  return {
+    '16-18': { label: '16:00 - 18:00', time: '16:00 - 18:00' },
+    '18-20:30': { label: '18:00 - 20:30', time: '18:00 - 20:30' },
+  };
+};
+
 export const ACTIVITY_TYPES = {
+  ampliacion: { label: 'Ampliación', color: 'bg-activity-ampliacion' },
+  contactos: { label: 'Contactos', color: 'bg-activity-contactos' },
   revelado: { label: 'Revelado de negativos', color: 'bg-activity-revelado' },
-  ampliacion: { label: 'Ampliación/copias', color: 'bg-activity-ampliacion' },
-  contactos: { label: 'Hoja de contactos', color: 'bg-activity-contactos' },
-  otro: { label: 'Otro', color: 'bg-activity-otro' },
+  otro: { label: 'Otros', color: 'bg-activity-otro' },
 } as const;
 
 export const ACTIVITY_TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
