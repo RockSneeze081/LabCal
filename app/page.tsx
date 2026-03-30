@@ -3,7 +3,32 @@
 import * as React from 'react';
 import { format, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Camera, LogOut, Plus, Filter, X } from 'lucide-react';
+import { LogOut, Plus, Filter, X } from 'lucide-react';
+
+function DarkroomClockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 32 32"
+      fill="none"
+      className={className}
+    >
+      <circle cx="16" cy="16" r="14" fill="currentColor" opacity="0.15" />
+      <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" />
+      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+      <path d="M16 6v10l6 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="16" cy="16" r="1.5" fill="currentColor" />
+      <circle cx="16" cy="6" r="1" fill="currentColor" />
+      <circle cx="16" cy="26" r="1" fill="currentColor" />
+      <circle cx="6" cy="16" r="1" fill="currentColor" />
+      <circle cx="26" cy="16" r="1" fill="currentColor" />
+      <circle cx="9" cy="9" r="1" fill="currentColor" />
+      <circle cx="23" cy="9" r="1" fill="currentColor" />
+      <circle cx="9" cy="23" r="1" fill="currentColor" />
+      <circle cx="23" cy="23" r="1" fill="currentColor" />
+    </svg>
+  );
+}
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Modal } from '@/app/components/ui/modal';
@@ -205,7 +230,7 @@ function LabCalApp() {
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-red/20 mb-4">
-              <Camera className="w-8 h-8 text-accent-red" />
+              <DarkroomClockIcon className="w-8 h-8 text-accent-red" />
             </div>
             <h1 className="text-3xl font-mono font-bold text-text-primary">LabCal</h1>
             <p className="text-text-secondary mt-2">
@@ -239,7 +264,7 @@ function LabCalApp() {
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-accent-red/20">
-              <Camera className="w-5 h-5 text-accent-red" />
+              <DarkroomClockIcon className="w-5 h-5 text-accent-red" />
             </div>
             <span className="text-xl font-mono font-bold text-text-primary">LabCal</span>
           </div>
