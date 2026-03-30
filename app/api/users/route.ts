@@ -1,14 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { getAllUsers } from '@/lib/users';
 
 export async function GET() {
   try {
-    const users = await prisma.user.findMany({
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true },
-    });
-
+    const users = getAllUsers();
     return NextResponse.json({ users });
   } catch (error) {
     console.error('Error fetching users:', error);

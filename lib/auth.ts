@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { prisma } from './prisma';
+import { findOrCreateUser, getUserById } from './users';
 
 const SESSION_COOKIE = 'labcal_session';
 
@@ -32,12 +32,10 @@ export async function getSession(): Promise<SessionUser | null> {
   const [userId] = token.split('-');
   if (!userId) return null;
   
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true },
-  });
+  const user = getUserById(userId);
+  if (!user) return null;
   
-  return user;
+  return { id: user.id, name: user.name };
 }
 
 export async function destroySession(): Promise<void> {
@@ -46,18 +44,7 @@ export async function destroySession(): Promise<void> {
 }
 
 export async function loginOrCreate(name: string): Promise<SessionUser> {
-  const trimmedName = name.trim();
-  
-  let user = await prisma.user.findUnique({
-    where: { name: trimmedName },
-  });
-  
-  if (!user) {
-    user = await prisma.user.create({
-      data: { name: trimmedName },
-    });
-  }
-  
+  const user = findOrCreateUser(name);
   await createSession(user.id);
   
   return { id: user.id, name: user.name };
