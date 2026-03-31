@@ -6,23 +6,18 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - DATABASE_URL=postgresql://labcal_user:labcal_pass@db:5432/labcal
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost:3000
-      - REDIS_URL=redis://redis:6379
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - labcal-network
 
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     environment:
       - POSTGRES_USER=labcal_user
       - POSTGRES_PASSWORD=labcal_pass
@@ -30,33 +25,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U labcal_user -d labcal -h localhost"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U labcal_user -d labcal"]
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 30s
     restart: unless-stopped
     ports:
       - "5432:5432"
-    networks:
-      - labcal-network
-
-  redis:
-    image: redis:7-alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    networks:
-      - labcal-network
 
 volumes:
   pgdata:
-
-networks:
-  labcal-network:
-    driver: bridge
