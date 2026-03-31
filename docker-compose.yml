@@ -35,3 +35,7 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  labcal-network:
+    driver: bridge
